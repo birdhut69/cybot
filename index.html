@@ -59,6 +59,13 @@ async function send(e){e.preventDefault();const q=document.getElementById('q');c
  const d=div('b','…');let full='',src=null;
  try{
   const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,mode,stream:true,history:msgs})});
+  if(!r.ok||!(r.headers.get('content-type')||'').includes('event-stream')){
+   const j=await r.json().catch(()=>({error:'HTTP '+r.status}));
+   full=j.error||j.reply||('HTTP '+r.status);
+   if(/provider|key|ollama|502/i.test(full))full+='\n\n→ No AI backend running. Use /local.html (in-browser model, zero API) or set AI_API_KEY / run: ollama serve && ollama pull dolphin3';
+   setB(d,full,null);
+   if(cur==null){store.push({title:m.slice(0,40),msgs:[]});cur=store.length-1;}
+   store[cur].msgs.push({role:'u',text:m},{role:'bot',text:full,src:null});save();renderChats();return false;}
   const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
   while(true){const{done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});
    const ls=buf.split('\n\n');buf=ls.pop();

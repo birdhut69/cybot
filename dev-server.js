@@ -7,9 +7,9 @@ http.createServer(async(req,res)=>{
   const u=req.url.split('?')[0];
   if(u==='/api/chat'){
    let body='';req.on('data',c=>body+=c);req.on('end',async()=>{
-    const R={_s:200,_h:{},writeHead(c,h){this._s=c;Object.assign(this._h,h)},status(c){this._s=c;return this},
+    const R={_s:200,_h:{},writeHead(c,h){res.writeHead(c,h||{});this._s=c;Object.assign(this._h,h||{});return this},status(c){this._s=c;return this},
      json(o){res.writeHead(this._s,{'Content-Type':'application/json',...this._h});res.end(JSON.stringify(o))},
-     write(c){res.write(c)},end(){res.end()}};
+     write(c){if(!res.headersSent)res.writeHead(this._s,this._h);res.write(c)},end(){if(!res.headersSent)res.writeHead(this._s,this._h);res.end()}};
     try{req.body=body?JSON.parse(body):{};}catch(e){req.body={};}
     await handler({method:req.method,body:req.body},R);
    });return;
