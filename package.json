@@ -1,0 +1,11 @@
+{
+  "name": "cyber-ai-bot",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "node dev-server.js",
+    "start": "node dev-server.js"
+  }
+}

@@ -1,0 +1,73 @@
+<!doctype html><meta name=viewport content="width=device-width,initial-scale=1">
+<title>CYBER-AI — Ethical Hacker Bot</title>
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<style>
+:root{--bg:#0b0f14;--fg:#e6edf3;--mut:#8b98a5;--acc:#2dd4bf;--card:#111827;--brd:#1f2937}
+*{box-sizing:border-box}body{background:var(--bg);color:var(--fg);font-family:ui-monospace,Menlo,monospace;margin:0;height:100vh;display:flex}
+aside{width:230px;border-right:1px solid var(--brd);display:flex;flex-direction:column;background:#0d131a}
+aside h2{font-size:12px;color:var(--acc);padding:12px;margin:0}aside button{margin:6px 12px}
+#chats{flex:1;overflow:auto;padding:0 8px}
+#chats div{padding:8px 10px;border-radius:8px;font-size:12px;color:var(--mut);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#chats div:hover,#chats div.on{background:var(--card);color:var(--fg)}
+main{flex:1;display:flex;flex-direction:column}
+h1{font-size:15px;padding:11px 16px;margin:0;border-bottom:1px solid var(--brd);color:var(--acc)}
+#modes{display:flex;gap:8px;padding:8px 16px;border-bottom:1px solid var(--brd)}
+#modes button{background:var(--card);border:1px solid var(--brd);color:var(--mut);padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer}
+#modes button.on{color:var(--acc);border-color:var(--acc)}
+#log{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+.m{max-width:88%;padding:12px 16px;border-radius:12px;line-height:1.55;font-size:14px}
+.u{align-self:flex-end;background:#134e4a;white-space:pre-wrap}
+.b{align-self:flex-start;background:var(--card);border:1px solid var(--brd);width:88%}
+.b pre{background:#0b1220;border:1px solid var(--brd);border-radius:8px;padding:10px;overflow:auto;position:relative}
+.b code{font:inherit}
+.b h1,.b h2,.b h3{font-size:15px;color:var(--acc);margin:8px 0 4px;border:0;padding:0}
+.b li{margin:4px 0}.copy{position:absolute;top:4px;right:6px;font-size:10px;color:var(--mut);cursor:pointer}
+.src{font-size:11px;color:#5eead4;margin-top:8px;opacity:.8}
+form{display:flex;gap:8px;padding:12px;border-top:1px solid var(--brd)}
+input{flex:1;background:var(--card);border:1px solid var(--brd);color:var(--fg);padding:12px;border-radius:8px;font:inherit}
+button{background:#0d9488;border:0;color:#fff;padding:12px 18px;border-radius:8px;cursor:pointer}
+</style>
+<aside><h2>CYBER-AI // v2</h2><button onclick="newChat()">+ New chat</button><div id=chats></div></aside>
+<main><h1>ethical hacker bot — lab-first · kill-chain</h1>
+<div id=modes>
+<button class=on data-m=mentor>Mentor</button><button data-m=commands>Commands</button><button data-m=troubleshoot>Troubleshoot</button><button data-m=report>Report</button>
+</div><div id=log></div>
+<div id=quick style="display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--brd)">
+<button type=button class=qbtn onclick="qfill('continue from where we stopped, next step')">Next step</button>
+<button type=button class=qbtn onclick="qfill('explain what this output means and what to do next: ')">Explain output</button>
+<button type=button class=qbtn onclick="qfill('give me a bug bounty report for the last finding')">→ Report</button>
+<button type=button class=qbtn onclick="qfill('give me ONLY the commands for ')">Commands only</button>
+</div><style>.qbtn{padding:6px 12px;font-size:11px;background:var(--card);border:1px solid var(--brd);color:var(--mut);border-radius:14px}</style><form onsubmit="return send(event)"><input id=q placeholder="attack steps · tool usage · paste an error · 'kerberoast full steps'" autofocus><button>Send</button></form></main>
+<script>function qfill(t){const i=document.getElementById('q');i.value=t;i.focus();}</script>
+<script>
+const log=document.getElementById('log'),chatsEl=document.getElementById('chats');
+let mode='mentor',cur=null,store=JSON.parse(localStorage.cyberai_chats||'[]');
+document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#modes button').forEach(x=>x.classList.remove('on'));b.classList.add('on');mode=b.dataset.m;});
+function save(){localStorage.cyberai_chats=JSON.stringify(store.slice(-30));}
+function renderChats(){chatsEl.innerHTML='';store.forEach((c,i)=>{const d=document.createElement('div');d.textContent=c.title;d.className=i===cur?'on':'';d.onclick=()=>load(i);chatsEl.appendChild(d);});}
+function newChat(){cur=null;log.innerHTML='';bot('CYBER-AI online. Pick a mode, ask for attack steps, or paste an error.');renderChats();}
+function load(i){cur=i;log.innerHTML='';store[i].msgs.forEach(m=>m.role==='u'?user(m.text):bot(m.text,m.src));renderChats();}
+function div(c,t){const d=document.createElement('div');d.className='m '+c;d.innerHTML=t;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
+function user(t){return div('u',t.replace(/</g,'&lt;'));}
+function bot(t,src){const d=div('b','');setB(d,t,src);return d;}
+function setB(d,t,src){
+ d.innerHTML=marked.parse(t||'')+(src&&src.length?`<div class=src>📚 ${src.join(' · ')}</div>`:'');
+ d.querySelectorAll('pre').forEach(p=>{const b=document.createElement('span');b.className='copy';b.textContent='copy';b.onclick=()=>{navigator.clipboard.writeText(p.textContent);b.textContent='copied';setTimeout(()=>b.textContent='copy',1200)};p.appendChild(b);});}
+async function send(e){e.preventDefault();const q=document.getElementById('q');const m=q.value.trim();if(!m)return 0;
+ user(m);q.value='';
+ const msgs=(cur!=null?store[cur].msgs:[]).map(x=>({role:x.role,content:x.text})).slice(-10);
+ const d=div('b','…');let full='',src=null;
+ try{
+  const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,mode,stream:true,history:msgs})});
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
+  while(true){const{done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});
+   const ls=buf.split('\n\n');buf=ls.pop();
+   for(const ln of ls){if(!ln.startsWith('data:'))continue;const j=JSON.parse(ln.slice(5));
+    if(j.token){full+=j.token;setB(d,full,src)}if(j.sources)src=j.sources;if(j.done)break;}}
+  if(!full){const j=await r.json().catch(()=>({error:'stream failed'}));full=j.reply||j.error||'error';src=j.sources;setB(d,full,src);}
+ }catch(x){full='error: '+x;setB(d,full,null);}
+ if(cur==null){store.push({title:m.slice(0,40),msgs:[]});cur=store.length-1;}
+ store[cur].msgs.push({role:'u',text:m},{role:'bot',text:full,src});save();renderChats();
+ return false}
+newChat();
+</script>

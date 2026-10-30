@@ -1,0 +1,825 @@
+[
+ {
+  "tool": "nmap",
+  "pattern": "requires root|operation not permitted",
+  "diagnosis": "Nmap SYN/OS scans need root",
+  "fixes": [
+   "sudo nmap ...",
+   "Use -sT connect scan without root"
+  ]
+ },
+ {
+  "tool": "nmap",
+  "pattern": "host seems down|0 hosts up",
+  "diagnosis": "Ping blocked or wrong subnet",
+  "fixes": [
+   "nmap -Pn to skip ping",
+   "Verify subnet with ip a / arp-scan"
+  ]
+ },
+ {
+  "tool": "metasploit",
+  "pattern": "database not connected|msfdb",
+  "diagnosis": "PostgreSQL/MSF DB not running",
+  "fixes": [
+   "sudo msfdb init",
+   "msfdb status",
+   "Start postgresql service"
+  ]
+ },
+ {
+  "tool": "metasploit",
+  "pattern": "handler failed to bind|address already in use",
+  "diagnosis": "LPORT already occupied by a job/process",
+  "fixes": [
+   "jobs -K then set LPORT newport",
+   "ss -tulpn | grep 4444 to find squatter"
+  ]
+ },
+ {
+  "tool": "metasploit",
+  "pattern": "session died|exploit completed but no session",
+  "diagnosis": "Payload/arch mismatch or target not vulnerable",
+  "fixes": [
+   "Try different PAYLOAD (bind vs reverse)",
+   "check service version vs module",
+   "set VERBOSE true for detail"
+  ]
+ },
+ {
+  "tool": "hydra",
+  "pattern": "does not respond|connection refused",
+  "diagnosis": "Wrong service/port or target down",
+  "fixes": [
+   "nmap -sV -p<port> target first",
+   "Verify hydra module name ssh/ftp/http-post-form"
+  ]
+ },
+ {
+  "tool": "hydra",
+  "pattern": "no valid password found",
+  "diagnosis": "Wrong usernames/passwords or lockout",
+  "fixes": [
+   "Verify creds manually first",
+   "-t 4 to slow down",
+   "check account lockout"
+  ]
+ },
+ {
+  "tool": "sqlmap",
+  "pattern": "unable to connect to the target",
+  "diagnosis": "URL wrong/app needs auth cookie",
+  "fixes": [
+   "Add --cookie=\"PHPSESSID=..\"",
+   "Test URL in curl first"
+  ]
+ },
+ {
+  "tool": "sqlmap",
+  "pattern": "not injectable|all tested parameters appear",
+  "diagnosis": "Param not injectable or WAF",
+  "fixes": [
+   "--level=5 --risk=3 (lab only)",
+   "Try --technique=T time-based",
+   "Save request to file with -r"
+  ]
+ },
+ {
+  "tool": "hashcat",
+  "pattern": "token length exception|line-length exception",
+  "diagnosis": "Wrong hash mode or corrupt hash file",
+  "fixes": [
+   "Check hash format vs -m mode",
+   "hashcat --example-hashes"
+  ]
+ },
+ {
+  "tool": "john",
+  "pattern": "no password hashes loaded",
+  "diagnosis": "Wrong format detection",
+  "fixes": [
+   "john --format=raw-md5 hashes.txt",
+   "Check hashcat -m equivalents"
+  ]
+ },
+ {
+  "tool": "burp",
+  "pattern": "certificate.*(error|invalid)|ssl handshake",
+  "diagnosis": "Browser lacks Burp CA cert",
+  "fixes": [
+   "Install burp CA at http://burp",
+   "Import to browser trust store"
+  ]
+ },
+ {
+  "tool": "aircrack",
+  "pattern": "no wpa handshake|0 handshakes",
+  "diagnosis": "No handshake captured yet",
+  "fixes": [
+   "Keep airodump running, wait for client connect",
+   "Deauth a client on YOUR lab AP to force reconnect"
+  ]
+ },
+ {
+  "tool": "airmon",
+  "pattern": "command not found|no such device",
+  "diagnosis": "Adapter missing/not monitor-capable",
+  "fixes": [
+   "Check lsusb/iwconfig",
+   "Use supported USB adapter"
+  ]
+ },
+ {
+  "tool": "bloodhound",
+  "pattern": "ldap.*(error|fail)|authentication",
+  "diagnosis": "Wrong domain/user/DC settings",
+  "fixes": [
+   "bloodhound-python -u user -p pass -d domain -dc DCIP",
+   "Check ldap reachable: nmap -p389,636"
+  ]
+ },
+ {
+  "tool": "impacket",
+  "pattern": "kerberos.*error|clock skew",
+  "diagnosis": "Time desync with DC",
+  "fixes": [
+   "sudo ntpdate $DC or sync VM clock",
+   "Use -dc-ip directly"
+  ]
+ },
+ {
+  "tool": "gobuster",
+  "pattern": "status.*timeout|connection refused",
+  "diagnosis": "Target down or wordlist too big for rate",
+  "fixes": [
+   "Check curl first",
+   "--timeout 30s, -t 20 threads"
+  ]
+ },
+ {
+  "tool": "ffuf",
+  "pattern": "error|rate limit|429",
+  "diagnosis": "Server throttling your fuzzing",
+  "fixes": [
+   "-rate 50 to slow down",
+   "-mc 200,301,302 filter codes"
+  ]
+ },
+ {
+  "tool": "docker",
+  "pattern": "permission denied.*docker",
+  "diagnosis": "User not in docker group",
+  "fixes": [
+   "sudo docker ...",
+   "usermod -aG docker $USER + relogin"
+  ]
+ },
+ {
+  "tool": "docker",
+  "pattern": "cannot connect to the docker daemon",
+  "diagnosis": "Docker service not running",
+  "fixes": [
+   "sudo systemctl start docker",
+   "colima start on macOS"
+  ]
+ },
+ {
+  "tool": "git",
+  "pattern": "403|authentication failed",
+  "diagnosis": "Token/SSH auth issue",
+  "fixes": [
+   "gh auth login",
+   "Check remote URL https vs ssh"
+  ]
+ },
+ {
+  "tool": "pip",
+  "pattern": "externally-managed-environment",
+  "diagnosis": "PEP 668 blocks system pip",
+  "fixes": [
+   "Use pipx install <tool>",
+   "python3 -m venv .venv && .venv/bin/pip install"
+  ]
+ },
+ {
+  "tool": "python",
+  "pattern": "modulenotfounderror|no module named",
+  "diagnosis": "Missing dependency in current env",
+  "fixes": [
+   "pip install <module>",
+   "Check which python you are running"
+  ]
+ },
+ {
+  "tool": "flask",
+  "pattern": "module not found.*flask",
+  "diagnosis": "Flask missing from venv",
+  "fixes": [
+   ".venv/bin/pip install flask",
+   "python3 -m venv .venv first"
+  ]
+ },
+ {
+  "tool": "vercel",
+  "pattern": "command not found.*vercel",
+  "diagnosis": "CLI not installed or login needed",
+  "fixes": [
+   "npm i -g vercel",
+   "vercel login"
+  ]
+ },
+ {
+  "tool": "vercel",
+  "pattern": "function invocation timeout|max duration",
+  "diagnosis": "Serverless timeout exceeded",
+  "fixes": [
+   "vercel.json functions maxDuration 60",
+   "Stream responses",
+   "Reduce context size"
+  ]
+ },
+ {
+  "tool": "wireshark",
+  "pattern": "permission denied.*capture|no interfaces",
+  "diagnosis": "Missing capture privileges",
+  "fixes": [
+   "sudo wireshark",
+   "Add user to wireshark group, re-login"
+  ]
+ },
+ {
+  "tool": "tcpdump",
+  "pattern": "you dont have permission|operation not permitted",
+  "diagnosis": "Raw socket needs root",
+  "fixes": [
+   "sudo tcpdump ..."
+  ]
+ },
+ {
+  "tool": "ssh",
+  "pattern": "permission denied \\(publickey\\)|authentication failed",
+  "diagnosis": "Wrong key/user or key auth only",
+  "fixes": [
+   "ssh -i keyfile user@host",
+   "ssh -vvv for debug",
+   "Check authorized_keys on target"
+  ]
+ },
+ {
+  "tool": "ssh",
+  "pattern": "connection refused.*22",
+  "diagnosis": "SSH service down/firewalled",
+  "fixes": [
+   "nmap -p22 target",
+   "On target: sudo systemctl start ssh"
+  ]
+ },
+ {
+  "tool": "ssh",
+  "pattern": "host key verification failed",
+  "diagnosis": "MITM warning or host re-imaged",
+  "fixes": [
+   "ssh-keygen -R <ip> to clear known_hosts",
+   "Verify fingerprint out-of-band"
+  ]
+ },
+ {
+  "tool": "netcat",
+  "pattern": "connection refused|nc: connect",
+  "diagnosis": "Nothing listening on that port",
+  "fixes": [
+   "nmap the port",
+   "Start listener first: nc -lvnp PORT"
+  ]
+ },
+ {
+  "tool": "wpscan",
+  "pattern": "updates database|api token",
+  "diagnosis": "Vuln DB needs token for full results",
+  "fixes": [
+   "Get free token at wpscan.com",
+   "Run without token for basic enum"
+  ]
+ },
+ {
+  "tool": "feroxbuster",
+  "pattern": "too many errors|backoff",
+  "diagnosis": "Rate limiting/target overwhelmed",
+  "fixes": [
+   "--rate-limit 50",
+   "--timeout 10"
+  ]
+ },
+ {
+  "tool": "enum4linux",
+  "pattern": "nt_status_access_denied|null session",
+  "diagnosis": "SMB guest access disabled (good sign)",
+  "fixes": [
+   "Try credentialed -u user -p pass",
+   "Port 445 vs 139"
+  ]
+ },
+ {
+  "tool": "nfs",
+  "pattern": "access denied.*mount|clnt_create",
+  "diagnosis": "Export restricted or wrong path",
+  "fixes": [
+   "showmount -e target first",
+   "Mount listed path only",
+   "Try -o vers=3"
+  ]
+ },
+ {
+  "tool": "smbclient",
+  "pattern": "nt_status_logon_failure",
+  "diagnosis": "Bad creds or guest disabled",
+  "fixes": [
+   "-N for anonymous test",
+   "Valid creds: -U user%pass"
+  ]
+ },
+ {
+  "tool": "x11",
+  "pattern": "cannot open display|authorization",
+  "diagnosis": "X11 forwarding not set",
+  "fixes": [
+   "ssh -X user@host",
+   "xauth list / xhost + on lab"
+  ]
+ },
+ {
+  "tool": "vncviewer",
+  "pattern": "unable to connect|connection refused",
+  "diagnosis": "Wrong display/port or service down",
+  "fixes": [
+   "vncviewer IP:5900 or IP:0",
+   "nmap -p5900 target"
+  ]
+ },
+ {
+  "tool": "meterpreter",
+  "pattern": "unknown command|stdapi",
+  "diagnosis": "Extension not loaded",
+  "fixes": [
+   "load stdapi / use post modules",
+   "shell for system commands"
+  ]
+ },
+ {
+  "tool": "msfvenom",
+  "pattern": "error.*arch|invalid format",
+  "diagnosis": "Wrong -f format or -a arch",
+  "fixes": [
+   "Match arch to target: linux/x86, windows/x64",
+   "List formats: msfvenom -l formats"
+  ]
+ },
+ {
+  "tool": "postgresql",
+  "pattern": "password authentication failed",
+  "diagnosis": "Wrong creds or pg_hba rules",
+  "fixes": [
+   "Check lab creds",
+   "psql host=IP user=U password=P"
+  ]
+ },
+ {
+  "tool": "mysql",
+  "pattern": "access denied for user|cant connect",
+  "diagnosis": "Wrong creds or remote root off",
+  "fixes": [
+   "mysql -h IP -u root -p",
+   "Check bind-address on target"
+  ]
+ },
+ {
+  "tool": "curl",
+  "pattern": "ssl certificate problem|self.signed",
+  "diagnosis": "Self-signed/expired cert in lab",
+  "fixes": [
+   "curl -k to skip verify (lab only)",
+   "Import cert properly"
+  ]
+ },
+ {
+  "tool": "curl",
+  "pattern": "connection timed out|failed to connect",
+  "diagnosis": "Target down/port closed/firewall",
+  "fixes": [
+   "nmap -p80,443 target",
+   "Check VM network mode"
+  ]
+ },
+ {
+  "tool": "powershell",
+  "pattern": "execution of scripts is disabled|execution policy",
+  "diagnosis": "Policy blocks script run",
+  "fixes": [
+   "powershell -ep bypass -File script.ps1 (lab)",
+   "Set-ExecutionPolicy"
+  ]
+ },
+ {
+  "tool": "kerbrute",
+  "pattern": "user.*not found|kdc error",
+  "diagnosis": "Wrong domain spelling or DC unreachable",
+  "fixes": [
+   "Verify domain: --dc IP -d domain.local",
+   "nslookup domain"
+  ]
+ },
+ {
+  "tool": "netexec|crackmapexec",
+  "pattern": "status_logon_failure",
+  "diagnosis": "Invalid creds or account locked",
+  "fixes": [
+   "Verify creds manually",
+   "Try local auth: --local-auth"
+  ]
+ },
+ {
+  "tool": "wireless",
+  "pattern": "no such device|monitor mode failed",
+  "diagnosis": "Adapter lacks monitor support",
+  "fixes": [
+   "airmon-ng check kill first",
+   "Use Alfa/compatible adapter"
+  ]
+ },
+ {
+  "tool": "frida",
+  "pattern": "unable to connect|device not found",
+  "diagnosis": "ADB link broken or frida-server missing",
+  "fixes": [
+   "adb devices first",
+   "Push+run frida-server on device"
+  ]
+ },
+ {
+  "tool": "adb",
+  "pattern": "device unauthorized|offline",
+  "diagnosis": "USB debugging not authorized",
+  "fixes": [
+   "Accept prompt on device",
+   "adb kill-server && adb devices"
+  ]
+ },
+ {
+  "tool": "zaproxy|zap",
+  "pattern": "no route to host|proxy",
+  "diagnosis": "ZAP not listening/proxy mismatch",
+  "fixes": [
+   "zaproxy -daemon -port 8090",
+   "Set browser proxy 127.0.0.1:8090"
+  ]
+ },
+ {
+  "tool": "git clone",
+  "pattern": "repository not found|404",
+  "diagnosis": "Wrong URL or private repo",
+  "fixes": [
+   "Check repo name",
+   "gh auth login for private"
+  ]
+ },
+ {
+  "tool": "latex|tectonic",
+  "pattern": "undefined control sequence",
+  "diagnosis": "Bad escape in generated doc",
+  "fixes": [
+   "Escape % $ _ # & in text",
+   "Re-run pandoc/tectonic"
+  ]
+ },
+ {
+  "tool": "apt|apt-get",
+  "pattern": "unable to locate package",
+  "diagnosis": "Repo not updated or wrong name",
+  "fixes": [
+   "sudo apt update",
+   "Search: apt search <name>"
+  ]
+ },
+ {
+  "tool": "kali",
+  "pattern": "command not found",
+  "diagnosis": "Tool not installed",
+  "fixes": [
+   "sudo apt install <tool>",
+   "which <tool> to verify path"
+  ]
+ },
+ {
+  "tool": "nuclei",
+  "pattern": "no templates|0 templates",
+  "diagnosis": "Templates not downloaded",
+  "fixes": [
+   "nuclei -update-templates",
+   "Check ~/.local/nuclei-templates exists"
+  ]
+ },
+ {
+  "tool": "nuclei",
+  "pattern": "too many requests|rate limit",
+  "diagnosis": "Scanner throttling",
+  "fixes": [
+   "-rl 30 rate limit",
+   "-c 10 concurrency down"
+  ]
+ },
+ {
+  "tool": "nikto",
+  "pattern": "host not found|timeout",
+  "diagnosis": "Target down or TLS mismatch",
+  "fixes": [
+   "-ssl flag for https",
+   "curl -k target first"
+  ]
+ },
+ {
+  "tool": "netexec|crackmapexec",
+  "pattern": "status_account_disabled|locked",
+  "diagnosis": "Account disabled/locked by policy",
+  "fixes": [
+   "Different account",
+   "This is detection evidence \u2014 log it"
+  ]
+ },
+ {
+  "tool": "responder",
+  "pattern": "error binding|port in use",
+  "diagnosis": "445/80 already bound",
+  "fixes": [
+   "sudo needed for 445/80",
+   "Check ss -tulpn, kill conflicting service"
+  ]
+ },
+ {
+  "tool": "certipy",
+  "pattern": "kerberos|authentication",
+  "diagnosis": "DC/creds wrong",
+  "fixes": [
+   "certipy find -u user@dom -p pass -dc-ip IP",
+   "Sync clock with DC"
+  ]
+ },
+ {
+  "tool": "secretsdump",
+  "pattern": "access denied|rpc error",
+  "diagnosis": "Needs admin or correct method",
+  "fixes": [
+   "Verify admin creds",
+   "-use-vss or -just-dc-ntlm variants (lab)"
+  ]
+ },
+ {
+  "tool": "evil-winrm",
+  "pattern": "winrm.*error|connection",
+  "diagnosis": "WinRM off or wrong port/auth",
+  "fixes": [
+   "nmap -p5985,5986",
+   "-u user -p pass -i IP flags"
+  ]
+ },
+ {
+  "tool": "chisel",
+  "pattern": "connection refused|handshake",
+  "diagnosis": "Server not listening/firewall",
+  "fixes": [
+   "Start server first: chisel server -p 9000 --reverse"
+  ]
+ },
+ {
+  "tool": "socat",
+  "pattern": "address already in use",
+  "diagnosis": "Port already bound",
+  "fixes": [
+   "Different port",
+   "ss -tulpn to find squatter"
+  ]
+ },
+ {
+  "tool": "proxychains",
+  "pattern": "denied|timeout|unable to connect",
+  "diagnosis": "Proxy config wrong",
+  "fixes": [
+   "Edit /etc/proxychains.conf",
+   "Test proxy itself with curl --proxy"
+  ]
+ },
+ {
+  "tool": "kali apt",
+  "pattern": "expired key|signature invalid",
+  "diagnosis": "Kali signing key rotated",
+  "fixes": [
+   "sudo apt install kali-archive-keyring",
+   "apt update again"
+  ]
+ },
+ {
+  "tool": "virtualbox",
+  "pattern": "kernel driver|modprobe",
+  "diagnosis": "VBox modules not built",
+  "fixes": [
+   "sudo /sbin/vboxconfig",
+   "Install kernel headers"
+  ]
+ },
+ {
+  "tool": "apktool",
+  "pattern": "brut.*exception|error decoding",
+  "diagnosis": "Obfuscated/packed APK",
+  "fixes": [
+   "apktool d -r (skip resources)",
+   "Use jadx instead"
+  ]
+ },
+ {
+  "tool": "jadx",
+  "pattern": "dex.*error|cannot decompile",
+  "diagnosis": "Multidex/packed app",
+  "fixes": [
+   "Load all dex files",
+   "Unpack first (frida dump)"
+  ]
+ },
+ {
+  "tool": "jwt_tool",
+  "pattern": "invalid token|malformed",
+  "diagnosis": "Not a JWT or truncated",
+  "fixes": [
+   "Check 3 parts base64",
+   "Get fresh token from login request"
+  ]
+ },
+ {
+  "tool": "subfinder",
+  "pattern": "0 subdomains|no results",
+  "diagnosis": "No API keys configured",
+  "fixes": [
+   "Add keys to provider-config.yaml",
+   "Passive-only works partially without keys"
+  ]
+ },
+ {
+  "tool": "httpx",
+  "pattern": "no response|timeout",
+  "diagnosis": "Hosts down or WAF blocking",
+  "fixes": [
+   "-rate-limit 20",
+   "-http-proxy if needed"
+  ]
+ },
+ {
+  "tool": "dalfox",
+  "pattern": "no vulnerabilities|verify fail",
+  "diagnosis": "Not injectable or needs different context",
+  "fixes": [
+   "Test other params/contexts"
+  ]
+ },
+ {
+  "tool": "commix",
+  "pattern": "not injectable|no results",
+  "diagnosis": "Param not reaching shell",
+  "fixes": [
+   "--level 3",
+   "Check backend actually runs commands"
+  ]
+ },
+ {
+  "tool": "tplmap",
+  "pattern": "not vulnerable|no ssti",
+  "diagnosis": "Marker not evaluated",
+  "fixes": [
+   "Try {7*7} manually first",
+   "Different engines need different probes"
+  ]
+ },
+ {
+  "tool": "feroxbuster",
+  "pattern": "certificate|tls error",
+  "diagnosis": "Self-signed cert",
+  "fixes": [
+   "-k flag",
+   "http:// target instead"
+  ]
+ },
+ {
+  "tool": "dirsearch",
+  "pattern": "429|too many requests|block",
+  "diagnosis": "WAF rate limiting",
+  "fixes": [
+   "-t 5 slower",
+   "Smaller wordlist first"
+  ]
+ },
+ {
+  "tool": "bloodhound",
+  "pattern": "bolt.*error|connection",
+  "diagnosis": "Neo4j not running",
+  "fixes": [
+   "Start neo4j container/service",
+   "Check bolt port 7687"
+  ]
+ },
+ {
+  "tool": "searchsploit",
+  "pattern": "no results|0 exploits",
+  "diagnosis": "Term too specific or DB stale",
+  "fixes": [
+   "searchsploit -u update",
+   "Try shorter terms"
+  ]
+ },
+ {
+  "tool": "linpeas",
+  "pattern": "permission denied",
+  "diagnosis": "Not executable/downloaded wrong",
+  "fixes": [
+   "chmod +x linpeas.sh",
+   "Check file downloaded fully"
+  ]
+ },
+ {
+  "tool": "volatility|vol.py",
+  "pattern": "no suitable address space|symbol error",
+  "diagnosis": "Wrong profile/unsupported memory",
+  "fixes": [
+   "vol -f mem.vmem windows.info",
+   "Match profile to OS"
+  ]
+ },
+ {
+  "tool": "ghidra",
+  "pattern": "outofmemory|java heap",
+  "diagnosis": "Default heap too small for big binaries",
+  "fixes": [
+   "Increase heap in ghidraRun config",
+   "Use headless analyzer"
+  ]
+ },
+ {
+  "tool": "msfvenom",
+  "pattern": "payload failed|encoding",
+  "diagnosis": "Bad chars/arch mismatch",
+  "fixes": [
+   "Specify -a and --platform",
+   "Different encoder or format"
+  ]
+ },
+ {
+  "tool": "aircrack",
+  "pattern": "reading file.*error|unsupported",
+  "diagnosis": "Corrupt/unsupported capture format",
+  "fixes": [
+   "Convert with hcxpcapngtool",
+   "Recapture handshake"
+  ]
+ },
+ {
+  "tool": "bettercap",
+  "pattern": "no such device|permission",
+  "diagnosis": "Interface missing/root needed",
+  "fixes": [
+   "sudo bettercap -iface wlan0",
+   "iwconfig to list interfaces"
+  ]
+ },
+ {
+  "tool": "hostapd",
+  "pattern": "failed to start|operation not possible",
+  "diagnosis": "Driver/adapter lacks AP mode",
+  "fixes": [
+   "Check adapter supports AP mode",
+   "airmon check kill first"
+  ]
+ },
+ {
+  "tool": "adcs|certipy",
+  "pattern": "timed out|no response",
+  "diagnosis": "DC unreachable/wrong IP",
+  "fixes": [
+   "nmap -p389,636,88 $DC",
+   "Verify domain name spelling"
+  ]
+ },
+ {
+  "tool": "wireshark|zeek",
+  "pattern": "no interfaces|cannot capture",
+  "diagnosis": "Missing privileges/permissions",
+  "fixes": [
+   "sudo tcpdump/zeek",
+   "Add user to capture group"
+  ]
+ },
+ {
+  "tool": "metasploit",
+  "pattern": "job.*failed|handler not running",
+  "diagnosis": "Listener crashed or port conflict",
+  "fixes": [
+   "jobs -l to check",
+   "Re-run handler on new LPORT"
+  ]
+ }
+]
