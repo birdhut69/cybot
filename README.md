@@ -53,3 +53,15 @@ Knowledge repos live in `data/knowledge/` (gitignored).
 ## Honest note on "uncensored"
 
 Hosted providers keep their own filters — no prompt removes them. This bot gives full kill-chain methods for lab/authorized targets (legitimate content). For fully local/unfiltered, run Ollama on your machine and point `AI_BASE_URL` at it.
+
+## WebLLM mode — zero API, pure static (local.html)
+
+`/local.html` runs the model **inside the visitor's browser** via WebLLM/WebGPU:
+
+- No API key, no server AI, no disk space needed anywhere
+- Vercel serves only static files — deploy the repo and `https://yourapp.vercel.app/local.html` works from any device
+- First visit downloads a model (~2–5GB) into browser cache; needs WebGPU (Chrome/Edge desktop best, Safari 18+ mobile OK for small models)
+- Retrieval (28k-section index) runs client-side too — nothing leaves the device
+- This is the closest to truly uncensored on Vercel: it's a local-model fine-tune running client-side
+
+**Trade-off vs API mode:** browser models are smaller/slower than GPT-4o-class. Use `/` (API mode) for speed+quality, `/local.html` for zero-API RAW.

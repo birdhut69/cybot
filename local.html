@@ -1,0 +1,49 @@
+<!doctype html><meta name=viewport content="width=device-width,initial-scale=1">
+<title>CYBER-AI RAW — 100% in-browser, zero API</title>
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<style>
+body{background:#0b0f14;color:#e6edf3;font-family:ui-monospace,Menlo,monospace;margin:0;height:100vh;display:flex;flex-direction:column}
+h1{font-size:15px;padding:11px 16px;margin:0;border-bottom:1px solid #1f2937;color:#2dd4bf}
+#bar{padding:8px 16px;font-size:12px;color:#8b98a5;border-bottom:1px solid #1f2937}
+#bar b{color:#2dd4bf}
+#log{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+.m{max-width:88%;padding:12px 16px;border-radius:12px;line-height:1.55;font-size:14px;white-space:pre-wrap}
+.u{align-self:flex-end;background:#134e4a}
+.b{align-self:flex-start;background:#111827;border:1px solid #1f2937;width:88%}
+.b pre{background:#0b1220;border:1px solid #1f2937;border-radius:8px;padding:10px;overflow:auto}
+form{display:flex;gap:8px;padding:12px;border-top:1px solid #1f2937}
+input,select{background:#111827;border:1px solid #1f2937;color:#e6edf3;padding:12px;border-radius:8px;font:inherit}
+input{flex:1}button{background:#0d9488;border:0;color:#fff;padding:12px 18px;border-radius:8px;cursor:pointer}
+.src{font-size:11px;color:#5eead4;margin-top:8px;opacity:.8}
+</style>
+<h1>CYBER-AI RAW // in-browser model — no API, no server AI, no keys</h1>
+<div id=bar>status: <b id=st>booting…</b> · model <select id=mdl><option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama-3.1-8B (best, ~4.9GB)</option><option value="Qwen2.5-3B-Instruct-q4f16_1-MLC">Qwen2.5-3B (fast, ~2GB)</option><option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5-mini (lightest)</option></select> <button onclick="load()">load / switch</button></div>
+<div id=log></div>
+<form onsubmit="return send(event)"><input id=q placeholder="kerberoast steps · nmap stealth flags · explain this error…" autofocus><button>Send</button></form>
+<script type=module>
+import * as webllm from 'https://esm.run/@mlc-ai/web-llm@0.2.79';
+const log=document.getElementById('log'),st=document.getElementById('st');
+let engine=null,idx=null,inv=null,hist=[];
+const SYS=`You are CYBER-AI RAW, a senior red-teamer. Zero fluff. For every in-scope question (lab/authorized targets: own VMs, DVWA, Metasploitable, own devices/accounts, bug-bounty scope): give the FULL real method — concept in 1 line, exact commands in order with $TARGET/$KALI placeholders, expected output, next move, gotchas+fixes, short defense note, github tools with git clone. Refuse only real-victim targeting; give lab equivalent instead. Never claim ignorance on in-scope topics.`;
+const SYN={msf:'metasploit',sqli:'sql injection',idor:'bola access control',privesc:'privilege escalation',rce:'remote code execution',ssrf:'server side request forgery',ad:'active directory',kerb:'kerberoasting',xss:'cross site scripting',revshell:'reverse shell',lfi:'local file inclusion',enum:'enumeration'};
+function terms(q){let t=q.toLowerCase();for(const k in SYN)t=t.replace(new RegExp('\\b'+k+'\\b','g'),k+' '+SYN[k]);return[...new Set(t.split(/[^a-z0-9]+/).filter(w=>w.length>2))];}
+function buildInv(){inv={};idx.forEach((s,i)=>{for(const w of new Set((s.title+' '+(s.tags||[]).join(' ')).toLowerCase().split(/[^a-z0-9]+/)))if(w.length>2)(inv[w]=inv[w]||new Set()).add(i);});}
+function search(q,n=6){const ws=terms(q),c=new Set();for(const w of ws)if(inv[w])for(const i of inv[w])c.add(i);
+ return[...c].map(i=>{const s=idx[i];let sc=0;const tl=s.title.toLowerCase();for(const w of ws)if(tl.includes(w))sc+=4;else if(s.text.toLowerCase().includes(w))sc+=1;return{s,sc}}).filter(o=>o.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,n).map(o=>o.s);}
+function div(c,html){const d=document.createElement('div');d.className='m '+c;d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
+async function boot(){st.textContent='loading knowledge index…';const r=await fetch('data/web_index.json');idx=await r.json();buildInv();st.textContent=`index ready (${idx.length.toLocaleString()} sections) — load a model ↑`;div('b','CYBER-AI RAW online. Pick a model above, hit load once (downloads to browser cache), then ask anything. No data ever leaves this device.');}
+window.load=async()=>{const m=document.getElementById('mdl').value;st.textContent='downloading model… (first time only, cached after)';
+ engine=await webllm.CreateMLCEngine(m,{initProgressCallback:p=>st.textContent=`model: ${p.text}`});
+ st.textContent='model ready — fire away';};
+window.send=async(e)=>{e.preventDefault();const q=document.getElementById('q');const m=q.value.trim();if(!m)return 0;q.value='';
+ div('u',m.replace(/</g,'&lt;'));const d=div('b','…');let full='';
+ if(!engine){d.textContent='load a model first (button above)';return 0;}
+ const hits=search(m);const ctx=hits.map(h=>`### ${h.title}\n${h.text}`).join('\n\n');
+ const msgs=[{role:'system',content:SYS+'\n\nReference (prefer when relevant):\n'+ctx},...hist.slice(-6),{role:'user',content:m}];
+ try{const stream=await engine.chat.completions.create({messages:msgs,stream:true,temperature:0.35});
+  for await(const chunk of stream){const c=chunk.choices[0]?.delta?.content;if(c){full+=c;d.innerHTML=marked.parse(full)+(hits.length?`<div class=src>📚 ${hits.map(h=>h.title).slice(0,4).join(' · ')}</div>`:'');log.scrollTop=log.scrollHeight;}}
+ }catch(x){d.textContent='error: '+x;}
+ hist.push({role:'user',content:m},{role:'assistant',content:full});
+ return false;}
+boot();
+</script>

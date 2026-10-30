@@ -15,9 +15,21 @@ const ERR_RE=/error|failed|denied|refused|cannot|unable|no such|traceback|not fo
 function tsHits(msg){
  return TS.filter(t=>{try{return new RegExp(t.pattern,'i').test(msg);}catch(e){return false;}}).slice(0,4);
 }
-function providers(){
+const OLLAMA=(process.env.OLLAMA_URL||'http://localhost:11434').replace(/\/$/,'');
+const PREFER=['dolphin','abliterat','uncensored','huihui','wizard-vicuna','dolphin3','qwen','llama','mistral','gemma'];
+async function localModel(){
+ try{
+  const r=await fetch(OLLAMA+'/api/tags',{signal:AbortSignal.timeout(3000)});
+  const j=await r.json();const names=(j.models||[]).map(m=>m.name);
+  for(const pref of PREFER){const hit=names.find(n=>n.toLowerCase().includes(pref));if(hit)return hit;}
+  return names[0]||'dolphin3';
+ }catch(e){return process.env.AI_MODEL||'dolphin3';}
+}
+async function providers(){
  try{if(process.env.AI_PROVIDERS)return JSON.parse(process.env.AI_PROVIDERS);}catch(e){}
- return[{base:(process.env.AI_BASE_URL||'https://api.openai.com/v1').replace(/\/$/,''),model:process.env.AI_MODEL||'gpt-4o-mini',key:process.env.AI_API_KEY||''}];
+ if(process.env.AI_API_KEY)return[{base:(process.env.AI_BASE_URL||'https://api.openai.com/v1').replace(/\/$/,''),model:process.env.AI_MODEL||'gpt-4o-mini',key:process.env.AI_API_KEY}];
+ // local-first: no external API needed
+ return[{base:OLLAMA+'/v1',model:await localModel(),key:'ollama',local:true}];
 }
 async function callLLM(p,messages,stream){
  const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),25000);
@@ -46,7 +58,7 @@ module.exports=async(req,res)=>{
   const messages=[{role:'system',content:sys},...hist.map(m=>({role:m.role==='bot'?'assistant':m.role,content:String(m.content).slice(0,4000)})),{role:'user',content:message}];
   const wantStream=!!body.stream;
   let lastErr='';
-  for(const p of providers()){
+  for(const p of await providers()){
    if(!p.key){lastErr='no API key for '+(p.model||'provider');continue;}
    try{
     const r=await callLLM(p,messages,wantStream);

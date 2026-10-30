@@ -20,4 +20,9 @@ http.createServer(async(req,res)=>{
   res.writeHead(200,{'Content-Type':p.endsWith('.html')?'text/html':'text/plain'});
   fs.createReadStream(p).pipe(res);
  }catch(e){res.writeHead(500);res.end(String(e));}
-}).listen(PORT,()=>console.log('CYBER-AI dev → http://localhost:'+PORT));
+}).listen(PORT,async()=>{
+ console.log('CYBER-AI dev → http://localhost:'+PORT);
+ try{const r=await fetch('http://localhost:11434/api/tags');const j=await r.json();
+  console.log('Ollama models:',(j.models||[]).map(m=>m.name).join(', ')||'NONE — run: ollama pull dolphin3');}
+ catch(e){console.log('Ollama offline — run: ollama serve && ollama pull dolphin3');}
+ console.log('Public URL:  cloudflared tunnel --url http://localhost:'+PORT);});
